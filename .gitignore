@@ -2,3 +2,4 @@ config.json
 messages.db
 scraper_session.session
 scraper_session.session-journal
+baselines.db
