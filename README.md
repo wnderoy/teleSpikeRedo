@@ -1,73 +1,87 @@
-**Telegram Analiser**
+# Telegram Analyser
 
-order of files:
+Real-time spike and trend detection pipeline for Telegram messages using Apache Kafka and PySpark.
 
-**telegramScraper:** using telethon, scrapes as much messages as it can
-outputs->messages.db
+This is a guide on how to run a demonstration in the Afeka big data VM.
 
-inputs<-messages.db
-**baseline:** using spark we tokenise, filter, and calculate each tokens and its avrage apperanse for each hour of the day
-outputs->baseline.db
+I reccomend skipping the telegram scraping jobs and using the Replay option insted. If you want to run the scrapers go to https://my.telegram.org to generate an api key and put it into config.json 
 
-up until now, this is a batch job that can run once a day
+## Configuration & Utilities
+
+**`config.json`**: Contains file paths for databases, Kafka server/topic definitions, and Telegram API credentials.
+
+I have removed my personal API keys, you can generate your own at https://my.telegram.org
+
+you will need to follow news channels and well, make sure you follow every channle in the channels list before running the scraper
 
 
+**`hStatus.ipynb`**: Utility notebook to inspect live status of background workers, check message counts/backlog in Kafka queues, or kill all active pipeline processes.
 
-# Pipeline Execution Guide
+
+## Preparations
+
+These are prepertions we can run as batch jobs. we can run them manualy or daily as a cron job.
+
+
+**`hTelescraper.ipynb`**: Scrapes as much messages as we can from channel list (configured in config). these can be used for baseline calculations or for replays. saved in path configured in config.
+
+I have already scraped the channels and provided the results as `messages.db`.
+
+You can run the scraper your self but it does take setup.
+
+**`hBaselines.ipynb`**: Uses Spark to tokenize, filter, and calculate the average hourly appearance rate for each followed token, saving the baseline matrix into the configured path.
+
+Currently configured to baselines.db. feel free to delete the current baselines.db file and generate it your self.
+
+You can generate baseline rates for any words of your choosing, just change the "followed_tokens" list and run the notebook again
+
+**This notebook featurs SELECT cells to view your current data bases**
+
+
 
 ---
 
-## 1. One-Time Setup (Offline Data Prep)
+## Running the Pipeline
 
-Run these once to prepare the local datasets:
+### Start Kafka
 
-* **`telegramScraper.ipynb`**
-Scrapes historical Telegram messages into `messages.db`.
-* **`baseline.ipynb`**
-Computes hourly token baselines from `messages.db` and writes them to `baselines.db`.
+Make sure your Kafka broker is up and running.
+you can use this custom script:
 
----
-
-## 2. Infrastructure Setup
-
-Start the messaging broker before running the streaming pipeline:
-
-* **Terminal:**
 ```bash
 bash run_kafka.sh
 
 ```
 
+### Setting up workers
+
+There are 2 workers in this pipe line:
+
+#### Raw to Tokens:
+**`sparkRawToTokens.ipynb`** :
+Reads raw messages from Kafka, tokenizes and filters words in parallel using Spark, and publishes valid tokens and thier timeStamp to `telegram-tokens`.
+
+fliters words based on "followed_tokens" list in config
 
 
----
+#### Tokens counter
+Evaluates incoming tokens against baselines for spikes/trends and displays live notifications.
 
-## 3. Streaming Engine (Start Listeners)
+We have 2 implemented versions. one utilising Spark
+* **`wPythonTokensCounter.ipynb`**: Lightweight, low-overhead pure Python consumer.
 
-Run all cells in these notebooks from top to bottom (both cells stay active with `[*]`):
 
-1. **`sparkRawToTokens.ipynb`** (Stage 1)
-Creates Kafka topics, tokenizes incoming messages, and pushes tokens to `telegram-tokens`.
-2. **`sparkTokensCounter.ipynb`** (Stage 2)
-Loads baselines, connects to `telegram-tokens`, and monitors leaky-bucket spike levels.
+* **`sparkTokensCounter.ipynb`**: PySpark Structured Streaming consumer utilizing micro-batches.
 
----
 
-## 4. Message Source (Choose ONE)
 
-Pick how you want to feed messages into the running pipeline:
 
-* **Option A: Historical Replay**
-Run **`replayProducer.ipynb`** (Cell 2) to replay messages from `messages.db`.
-* **Option B: Live Stream**
-Run **`producer.ipynb`** (Cell 3) to stream live incoming Telegram messages in real time.
 
----
+### 3. Start Message Producer (Choose ONE)
 
-## Utilities
+Feed messages into the `telegram-raw` queue:
 
-* **`00_healthcheck.ipynb`**
-Inspects running components, database states, and pending Kafka queue backlog.
-* **Cleanup Cell:**
-Kills active workers, clears checkpoints, and purges Kafka topics for a clean restart.
+* **Live Stream**: Run **`producer.ipynb`** to listen to Telegram channels and push new incoming messages in real time.
 
+
+* **Replay / Simulation**: Run **`replayProducer.ipynb`** to replay historical messages from `messages.db` at accelerated speed.
