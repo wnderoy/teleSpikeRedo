@@ -6,6 +6,16 @@ This is a guide on how to run a demonstration in the Afeka big data VM.
 
 I reccomend skipping the telegram scraping jobs and using the Replay option insted. If you want to run the scrapers go to https://my.telegram.org to generate an api key and put it into config.json 
 
+## Quick run
+
+Just to provide a clear clean run guide for a simulation, without connecting to Telegram:
+1) run kafka (can use the run_kafka.sh)
+2) run all of **`wSparkRawToTokens.ipynb`**
+3) run all of **`wSparkTokensCounter.ipynb`**, this is where you will see the results
+4) run **`pReplay.ipynb`** to simulate the program running over a month of messeges
+
+This is just a small simulation, read the full guide to understand the full pipeline, and how to run it live
+
 ## Configuration & Utilities
 
 **`config.json`**: Contains file paths for databases, Kafka server/topic definitions, and Telegram API credentials.
@@ -39,7 +49,6 @@ You can generate baseline rates for any words of your choosing, just change the 
 
 
 
----
 
 ## Running the Pipeline
 
@@ -55,7 +64,7 @@ bash run_kafka.sh
 
 ### Setting up workers
 
-There are 2 workers in this pipe line:
+There are 2 workers in this pipe line, you need to run both:
 
 #### Raw to Tokens:
 **`sparkRawToTokens.ipynb`** :
@@ -63,25 +72,34 @@ Reads raw messages from Kafka, tokenizes and filters words in parallel using Spa
 
 fliters words based on "followed_tokens" list in config
 
+To start worker, just click run all on this notebook, and look at the output in the last cell, should see: "This spark session is live and ready, awating termination"
 
-#### Tokens counter
+#### Tokens counter 
 Evaluates incoming tokens against baselines for spikes/trends and displays live notifications.
 
-We have 2 implemented versions. one utilising Spark
+We have 2 implemented versions. one utilising Spark and the other implemented in python.
+**You should run only one of these at a time**
+
 * **`wPythonTokensCounter.ipynb`**: Lightweight, low-overhead pure Python consumer.
+After developing this version, we relised it might create a bottel neck. that is why we created the Spark version. The reason we kept both is that the over head created by spark might not be worth its utility, and that a Kafka->python script might work better for this part of the pipeline.
 
 
-* **`sparkTokensCounter.ipynb`**: PySpark Structured Streaming consumer utilizing micro-batches.
+* **`wSparkTokensCounter.ipynb`**: PySpark Structured Streaming consumer utilizing micro-batches.
+
+To start worker, just click run all on this notebook (Spark version is reccomended, but they function the same), and look at the output in the last cell, should see: "Stage 2 worker live: Spark/Python version"
 
 
+**At this point you should have 2 spark notebooks running: a RawToTokens worker, and a TokenCounter worker. one of each.**
 
 
-
-### 3. Start Message Producer (Choose ONE)
+### Start Message Producer
 
 Feed messages into the `telegram-raw` queue:
 
-* **Live Stream**: Run **`producer.ipynb`** to listen to Telegram channels and push new incoming messages in real time.
+**Live Stream**: Run **`pLive.ipynb`** to listen to Telegram channels and push new incoming messages in real time.
 
 
-* **Replay / Simulation**: Run **`replayProducer.ipynb`** to replay historical messages from `messages.db` at accelerated speed.
+**Replay / Simulation**: Run **`pReplay.ipynb`** to replay historical messages from `messages.db` at accelerated speed.
+In these notebook we can simulate the pipeline working on whole months in secends.
+
+for example, you can configurate the SELECT command in this notebook to simulate spesific date you have in your data base, see what trends we caught at what time, and compare to local news or events from the same day
