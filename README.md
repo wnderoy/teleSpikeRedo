@@ -9,10 +9,11 @@ I reccomend skipping the telegram scraping jobs and using the Replay option inst
 ## Quick run
 
 Just to provide a clear clean run guide for a simulation, without connecting to Telegram:
-1) run kafka (can use the run_kafka.sh)
-2) run all of **`wSparkRawToTokens.ipynb`**
-3) run all of **`wSparkTokensCounter.ipynb`**, this is where you will see the results
-4) run **`pReplay.ipynb`** to simulate the program running over a month of messeges
+1) run setup.sh, than **`source .venv/bin/activate`**
+2) run kafka (can use the run_kafka.sh). if not installed run bash run_kafka_install.sh
+3) run all of **`wSparkRawToTokens.ipynb`**
+4) run all of **`wSparkTokensCounter.ipynb`**, this is where you will see the results
+5) run **`pReplay.ipynb`** to simulate the program running over a month of messeges
 
 This is just a small simulation, read the full guide to understand the full pipeline, and how to run it live
 
