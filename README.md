@@ -2,20 +2,30 @@
 
 Real-time spike and trend detection pipeline for Telegram messages using Apache Kafka and PySpark.
 
+After running this pipeline, the results will be alerts for when a word is trending across multiple news channles.
+
+There are 2 types of alerts in this pipeline:
+1) Trend: these are trends building over time, they can signal a shift in conversation. A good example would be the name "Bibi Netanyahu" trending because of election season.
+2) Spike: These are drastic changes in volume in a short amount of time. Our goal is to detect these as soon as possible, as they can signal an event before it even hits the official news. An example would be the name "Yair Netanyahu" spiking, connected to his recent assassination attempt.
+
+The alerts will be printed in the Token Counter worker notebook, in the last cell.
+They can easly be directed to any channle.
+
 This is a guide on how to run a demonstration in the Afeka big data VM.
 
 I reccomend skipping the telegram scraping jobs and using the Replay option insted. If you want to run the scrapers go to https://my.telegram.org to generate an api key and put it into config.json 
 
 ## Quick run
 
-Just to provide a clear clean run guide for a simulation, without connecting to Telegram:
+Just to provide a clear clean run guide for a simulation,skipping  the live and offline scraping, without connecting to Telegram:
 1) run setup.sh, than **`source .venv/bin/activate`**
 2) run kafka (can use the run_kafka.sh). if not installed run bash run_kafka_install.sh
+3) run **`hBaselineCalc.ipynb`** to generate our baselines data table. (although one is already provided)
 3) run all of **`wSparkRawToTokens.ipynb`**
 4) run all of **`wSparkTokensCounter.ipynb`**, this is where you will see the results
 5) run **`pReplay.ipynb`** to simulate the program running over a month of messeges
 
-This is just a small simulation, read the full guide to understand the full pipeline, and how to run it live
+This is just a small simulation, read the full guide to understand the full pipeline, how to run it live, and how to configure it
 
 ## Configuration & Utilities
 
