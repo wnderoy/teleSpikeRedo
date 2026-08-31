@@ -1,4 +1,4 @@
-# Telegram Analyser
+# Telegram Analyser - A Kafka and pySpark project
 
 Real-time spike and trend detection pipeline for Telegram messages using Apache Kafka and PySpark.
 
